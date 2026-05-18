@@ -8,6 +8,4 @@ class Project(SQLModel, table=True):
     owner_id: int = Field(foreign_key="user.id")
     status: str
     type: str
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
