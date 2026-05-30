@@ -10,17 +10,14 @@ from models.skill import Skill
 from models.user_skill import UserSkill
 from models.project import Project
 from models.project_role import ProjectRole
-# from models.application import Application
+from models.application import Application
 from routers.auth import router as auth_router
+from routers.users import router as users_router
 from security.jwt import get_current_user
 
 app = FastAPI()
 app.include_router(auth_router)
-
-# This is to test if the jwt token verification is working
-@app.get("/me")
-def get_me(current_user: User = Depends(get_current_user)):
-    return current_user
+app.include_router(users_router)
 
 SQLModel.metadata.create_all(engine)
 
