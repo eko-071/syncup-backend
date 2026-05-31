@@ -15,6 +15,7 @@ from models.application import Application
 from routers.auth import router as auth_router
 from routers.users import router as users_router
 from routers.skills import router as skills_router
+from routers.projects import router as projects_router
 from security.jwt import get_current_user
 
 app = FastAPI()
@@ -30,6 +31,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(skills_router)
+app.include_router(projects_router)
 
 
 SQLModel.metadata.create_all(engine)
