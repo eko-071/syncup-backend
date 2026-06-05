@@ -4,9 +4,11 @@ from database import get_session
 from models.application import Application
 from models.project_role import ProjectRole
 from models.user import User
+from models.project import Project
 from security.jwt import get_current_user
 from schemas.application import ApplicationCreate
 from schemas.application import ApplicationResponse
+from schemas.application import ApplicationStatusUpdate
 
 router= APIRouter(prefix="/applications", tags=["applications"])
 
@@ -101,3 +103,32 @@ def remove_application(
     session.delete(db_application)
     session.commit()
     return {"message": "Application withdrawn"}
+
+@router.patch("/{id}/status", response_model=ApplicationResponse)
+def update_application_status(
+    id: int,
+    update: ApplicationStatusUpdate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    application = session.exec(
+        select(Application).where(Application.id == id)
+    ).first()
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    # Only for project role owner here 
+    role = session.exec(
+        select(ProjectRole).where(ProjectRole.id == application.project_role_id)
+    ).first()
+    project = session.exec(
+        select(Project).where(Project.id == role.project_id)
+    ).first()
+    if project.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    application.status = update.status
+    session.add(application)
+    session.commit()
+    session.refresh(application)
+    return application

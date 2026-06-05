@@ -16,6 +16,7 @@ from routers.auth import router as auth_router
 from routers.users import router as users_router
 from routers.skills import router as skills_router
 from routers.projects import router as projects_router
+from routers.applications import router as applications_router
 from security.jwt import get_current_user
 
 app = FastAPI()
@@ -32,6 +33,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(skills_router)
 app.include_router(projects_router)
+app.include_router(applications_router)
 
 
 SQLModel.metadata.create_all(engine)
@@ -39,5 +41,3 @@ SQLModel.metadata.create_all(engine)
 with Session(engine) as session:
     result = session.exec(text("SELECT 1"))
     print("DB Connection test:", result.scalar())
-
-# Note: This is just a test to check if the database connection is working. If it works, it'll print a 1.
