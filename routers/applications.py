@@ -5,64 +5,71 @@ from models.application import Application
 from models.project_role import ProjectRole
 from models.user import User
 from security.jwt import get_current_user
+from schemas.application import ApplicationCreate
+from schemas.application import ApplicationResponse
 
-router = APIRouter(prefix="/applications", tags=["applications"])
+router= APIRouter(prefix="/applications", tags=["applications"])
 
-# Apply for a project role
-@router.post("/")
+#create application
+@router.post("/", response_model=ApplicationResponse)
 def create_application(
-    project_role_id: int,
+    application: ApplicationCreate,
     current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    session: Session= Depends(get_session)
 ):
-    role = session.exec(
-        select(ProjectRole)
-        .where(ProjectRole.id == project_role_id)
+    role=session.exec(
+        select(ProjectRole).where(
+            ProjectRole.id==application.project_role_id
+        )
     ).first()
     if not role:
         raise HTTPException(
             status_code=404,
             detail="Project role not found"
         )
-    existing = session.exec(
+    existing=session.exec(
         select(Application)
-        .where(Application.user_id == current_user.id)
-        .where(Application.project_role_id == project_role_id)
+        .where(Application.user_id==current_user.id)
+        .where(
+            Application.project_role_id==
+            application.project_role_id
+        )
     ).first()
     if existing:
         raise HTTPException(
             status_code=400,
             detail="Already applied"
         )
-    application = Application(
+    db_application=Application(
         user_id=current_user.id,
-        project_role_id=project_role_id
+        project_role_id=application.project_role_id
     )
-    session.add(application)
+    session.add(db_application)
     session.commit()
-    session.refresh(application)
-    return application
+    session.refresh(db_application)
+    return db_application
 
-# Get my applications
-@router.get("/me")
+#get my applications
+@router.get("/me", response_model=list[ApplicationResponse])
 def get_my_applications(
     current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    session: Session= Depends(get_session)
 ):
-    return session.exec(
+    applications=session.exec(
         select(Application)
-        .where(Application.user_id == current_user.id)
+        .where(Application.user_id==current_user.id)
     ).all()
+    return applications
 
-# Get application by ID
-@router.get("/{application_id}")
+#get application by id
+@router.get("/{id}", response_model=ApplicationResponse)
 def get_application(
-    application_id: int,
+    id:int,
     session: Session = Depends(get_session)
 ):
-    application = session.exec(
+    application=session.exec(
         select(Application)
-        .where(Application.id == application_id)
+        .where(Application.id==id)
     ).first()
     if not application:
         raise HTTPException(
@@ -71,27 +78,26 @@ def get_application(
         )
     return application
 
-# Withdraw my application
-@router.delete("/{application_id}")
-def delete_application(
-    application_id: int,
-    current_user: User = Depends(get_current_user),
+@router.delete("/{id}")
+def remove_application(
+    id: int,
+    current_user: User= Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    application = session.exec(
+    db_application=session.exec(
         select(Application)
-        .where(Application.id == application_id)
+        .where(Application.id==id)
     ).first()
-    if not application:
+    if not db_application:
         raise HTTPException(
             status_code=404,
             detail="Application not found"
         )
-    if application.user_id != current_user.id:
+    if db_application.user_id != current_user.id:
         raise HTTPException(
             status_code=403,
             detail="Not authorized"
         )
-    session.delete(application)
+    session.delete(db_application)
     session.commit()
     return {"message": "Application withdrawn"}
