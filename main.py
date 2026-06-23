@@ -17,6 +17,7 @@ from routers.users import router as users_router
 from routers.skills import router as skills_router
 from routers.projects import router as projects_router
 from routers.applications import router as applications_router
+from routers.project_roles import router as project_roles_router
 from security.jwt import get_current_user
 
 app = FastAPI()
@@ -34,7 +35,7 @@ app.include_router(users_router)
 app.include_router(skills_router)
 app.include_router(projects_router)
 app.include_router(applications_router)
-
+app.include_router(project_roles_router)
 
 SQLModel.metadata.create_all(engine)
 
